@@ -13,27 +13,29 @@ LabeledSentence = gensim.models.doc2vec.LabeledSentence  # we'll talk about this
 W2V_N_DIM = 150
 W2V_MODEL_NAME = 'tweet_w2v_model.json'
 
-FILENAME_A = 'data/semeval_train_A.txt'
+FILENAME_A = 'data/semeval_train_A_merged.txt'
 FILENAME_B = 'data/semeval_train_B.txt'
 FILENAME_C = 'data/semeval_train_C.txt'
 BASE_PATH = './W2V_MODEL/'
 
 INDEX_A = ['SentimentText', 'Sentiment']
-INDEX_B = ['ttext', 'topic', 'sentiment']
-INDEx_C = ['ttext', 'topic', 'point']
+INDEX_B = ['SentimentText', 'topic', 'Sentiment']
+INDEx_C = ['SentimentText', 'topic', 'Sentiment']
 
 
-def ingest(filename, index_names):
-    df = pd.read_csv(filename, sep="\t", header=None, names=index_names)
+def ingest(filename, index_names, sep='\t', encode='utf-8'):
+    df = pd.read_csv(filename, sep=sep, header=None, names=index_names, encoding=encode)
+    """
     print("============================== Preview ==============================")
-    print(df.head(5))
+    print(df.head(100))
     print("============================== Summary ==============================")
     print(df.describe())
     print("=====================================================================")
+    """
     return df
 
 
-def preprocess(data, n=-1):
+def preprocess_tweet(data, n=-1):
     def tokenize(tweet):
         tweet = tweet['SentimentText']
         try:
@@ -106,12 +108,45 @@ def load_json(filename):
         data = json.load(json_data)
     return data
 
+def increase_dataset(filename):
+    data_more = ingest(filename='./data/train_more.csv', index_names=['Sentiment', 'num', 'date', 'topic', 'user', 'SentimentText'], sep=',', encode='latin-1')
+    data_more = data_more.drop('num', axis=1)
+    data_more = data_more.drop('date', axis=1)
+    data_more = data_more.drop('topic', axis=1)
+    data_more = data_more.drop('user', axis=1)
+    data_more.loc[data_more.Sentiment == 0, 'Sentiment'] = -1
+    data_more.loc[data_more.Sentiment == 4, 'Sentiment'] = 1
+
+    print(data_more.head(20))
+    print(data_more.describe())
+
+    data = ingest(filename=FILENAME_A, index_names=INDEX_A)
+    data.loc[data.Sentiment == 'positive', 'Sentiment'] = 1
+    data.loc[data.Sentiment == 'neutral', 'Sentiment'] = 0
+    data.loc[data.Sentiment == 'negative', 'Sentiment'] = -1
+    print(data.head(20))
+    print(data.describe())
+
+    merged_data = pd.concat([data_more, data])
+    print(merged_data.head(10))
+    print(merged_data.describe())
+
+    merged_data = merged_data.drop_duplicates(subset='SentimentText', keep='last')
+    print(merged_data.head(10))
+    print(merged_data.describe())
+
+    merged_data.to_csv(filename, sep='\t', encoding='utf-8', index=False, header=False)
+    print("data saved")
+
+
 
 if __name__ == '__main__':
-    # Loading txt file and preprocessing
     data = ingest(filename=FILENAME_A, index_names=INDEX_A)
-    data = preprocess(data)
+    print("loadding done")
 
+    # Loading txt file and preprocessing
+    data = preprocess_tweet(data)
+    print("preprocess done")
     # Devide train set and test set but now set test size to 0
     x_train, x_test, y_train, y_test = train_test_split(np.array(data.tokens),
                                                         np.array(data.Sentiment),
@@ -122,11 +157,12 @@ if __name__ == '__main__':
 
     # train and save word2vec model
     model = train_w2v(train_data=x_train)
+    print("train done")
     save_w2v(model=model, filename=W2V_MODEL_NAME)
-
+    print("save model done")
     # show how to load word2vec model
     w2v_model = load_w2v(filename=W2V_MODEL_NAME)
-
+    print("load model done")
     # make vocabulary list from model
     corpus = get_vocab_list(w2v_model)
 
@@ -142,3 +178,4 @@ if __name__ == '__main__':
     vocab_list = list(vocab_vector.keys())
     print(vocab_vector['you'])
     print(vocab_list[:10])
+
