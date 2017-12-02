@@ -43,11 +43,13 @@ INDEX_C = ['SentimentText', 'topic', 'Sentiment']
 
 def ingest(filename, index_names, sep='\t', encode='utf-8'):
     df = pd.read_csv(filename, sep=sep, header=None, names=index_names, encoding=encode)
+
     print("============================== Preview ==============================")
     print(df.head(100))
     print("============================== Summary ==============================")
     print(df.describe())
     print("=====================================================================")
+
     return df
 
 
@@ -62,7 +64,7 @@ def tokenize(tweet):
         tokens = list(tokens)
 
         # Delete Stop Word
-        tokens = [w for w in tokens if w not in stop_words]
+        tokens = [ w for w in tokens if not w in stop_words]
 
         # Stemming
         tokens = [ps.stem(w) for w in tokens]
