@@ -112,5 +112,8 @@ checkpoints/
 
 # ctags
 tags
-data/
-test/
+data*/
+test*/
+checkpoints*/
+logs*/
+*.zip

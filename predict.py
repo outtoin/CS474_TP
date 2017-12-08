@@ -20,6 +20,8 @@ for argv in sys.argv[1:]:
     elif option == '--kval':
         KVAL = int(arg)
 
+RESULTDIR = TESTDIR.split('/')[0]
+
 if CHECKPOINT == "" or TESTDIR == "" or KVAL == 0:
     sys.exit(1)
 
@@ -91,7 +93,7 @@ print("x_test: {}".format(x_test.shape))
 print("y_test: {}".format(y_test.shape))
 print("test_seq_len: {}".format(test_seq_len.shape))
 
-writer = open('test/results.txt', 'a+t')
+writer = open('{}/results.txt'.format(RESULTDIR), 'a+t')
 RESULT = ""
 try:
     graph = tf.Graph()
